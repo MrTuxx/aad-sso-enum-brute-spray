@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -39,6 +40,7 @@ var (
 	password      stringFlag
 	emailsFile    stringFlag
 	passwordsFile stringFlag
+	output        io.Writer
 )
 
 func requestAzureActiveDirectory(domain string, user string, password string) {
@@ -99,7 +101,11 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	// close response body
 	res.Body.Close()
 	// print response status and body
-	getResults(getCode(string(data)), user, password)
+	if res.StatusCode != 200 {
+		getResults(getCode(string(data)), user, password)
+	} else {
+		fmt.Fprintln(output, user+":"+password+" -> Existing user")
+	}
 }
 
 func enumUsers(users_file string, password string) {
@@ -165,21 +171,21 @@ func getResults(errorCode string, user string, password string) {
 
 	switch {
 	case errorCode == "AADSTS81016":
-		println(user + ":" + password + " -> Invalid STS request")
+		fmt.Fprintln(output, user+":"+password+" -> Invalid STS request")
 	case errorCode == "AADSTS50053":
-		println(user + ":" + password + " -> Locked")
+		fmt.Fprintln(output, user+":"+password+" -> Locked")
 	case errorCode == "AADSTS50126":
-		println(user + ":" + password + " -> Bad Password")
+		fmt.Fprintln(output, user+":"+password+" -> Bad Password")
 	case errorCode == "AADSTS50056":
-		println(user + ":" + password + " -> Exists w/no password")
+		fmt.Fprintln(output, user+":"+password+" -> Exists w/no password")
 	case errorCode == "AADSTS50014":
-		println(user + ":" + password + " -> Exists, but max passthru auth time exceeded")
+		fmt.Fprintln(output, user+":"+password+" -> Exists, but max passthru auth time exceeded")
 	case errorCode == "AADSTS50076":
-		println(user + ":" + password + " -> Need mfa")
+		fmt.Fprintln(output, user+":"+password+" -> Need mfa")
 	case errorCode == "AADSTS700016":
-		println(user + ":" + password + " -> No app")
+		fmt.Fprintln(output, user+":"+password+" -> No app")
 	case errorCode == "AADSTS50034":
-		println(user + ":" + password + " -> No user")
+		fmt.Fprintln(output, user+":"+password+" -> No user")
 	}
 }
 
@@ -193,6 +199,15 @@ func init() {
 func main() {
 
 	flag.Parse()
+
+	filename := "output-" + time.Now().Format("20060102150405") + ".txt"
+	fd, err := os.Create(filename)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+	output = io.MultiWriter(os.Stdout, fd)
+
 	if email.set && password.set {
 		domain := strings.Split(email.value, "@")[1]
 		requestAzureActiveDirectory(domain, email.value, password.value)
