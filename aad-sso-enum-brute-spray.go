@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +42,7 @@ var (
 	emailsFile    stringFlag
 	passwordsFile stringFlag
 	output        io.Writer
+	wg            sync.WaitGroup
 )
 
 func requestAzureActiveDirectory(domain string, user string, password string) {
@@ -106,6 +108,7 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	} else {
 		fmt.Fprintln(output, user+":"+password+" -> Existing user")
 	}
+	defer wg.Done()
 }
 
 func enumUsers(users_file string, password string) {
@@ -117,6 +120,7 @@ func enumUsers(users_file string, password string) {
 	defer users.Close()
 	scanner_users := bufio.NewScanner(users)
 	for scanner_users.Scan() {
+		wg.Add(1)
 		user := scanner_users.Text()
 		domain := strings.Split(user, "@")[1]
 		go requestAzureActiveDirectory(domain, user, password)
@@ -135,6 +139,7 @@ func passwordAttack(passwords_file string, user string, domain string) {
 	defer passwords.Close()
 	scanner_passwords := bufio.NewScanner(passwords)
 	for scanner_passwords.Scan() {
+		wg.Add(1)
 		go requestAzureActiveDirectory(domain, user, scanner_passwords.Text())
 	}
 	if err := scanner_passwords.Err(); err != nil {
@@ -152,7 +157,7 @@ func bruteForcing(users_file string, passwords_file string) {
 	for scanner_users.Scan() {
 		user := scanner_users.Text()
 		domain := strings.Split(user, "@")[1]
-		go passwordAttack(passwords_file, user, domain)
+		passwordAttack(passwords_file, user, domain)
 	}
 	if err := scanner_users.Err(); err != nil {
 		log.Fatal(err)
@@ -209,8 +214,9 @@ func main() {
 	output = io.MultiWriter(os.Stdout, fd)
 
 	if email.set && password.set {
+		wg.Add(1)
 		domain := strings.Split(email.value, "@")[1]
-		requestAzureActiveDirectory(domain, email.value, password.value)
+		go requestAzureActiveDirectory(domain, email.value, password.value)
 	}
 	if emailsFile.set {
 		if _, err := os.Stat(emailsFile.value); os.IsNotExist(err) {
@@ -225,15 +231,14 @@ func main() {
 		}
 	}
 	if passwordsFile.set && emailsFile.set {
-		go bruteForcing(emailsFile.value, passwordsFile.value)
+		bruteForcing(emailsFile.value, passwordsFile.value)
 	}
 	if email.set && passwordsFile.set {
 		domain := strings.Split(email.value, "@")[1]
-		go passwordAttack(passwordsFile.value, email.value, domain)
+		passwordAttack(passwordsFile.value, email.value, domain)
 	}
 	if emailsFile.set && password.set {
 		enumUsers(emailsFile.value, password.value)
 	}
-	var input string
-	fmt.Scanln(&input)
+	wg.Wait()
 }
