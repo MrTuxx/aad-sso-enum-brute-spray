@@ -106,7 +106,7 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	if res.StatusCode != 200 {
 		getResults(getErrorCode(string(data)), user, password)
 	} else {
-		fmt.Fprintln(output, user+":"+password+" -> Existing user")
+		fmt.Fprintln(output, user+":"+password+" -> Correct credentials")
 	}
 	defer wg.Done()
 }
