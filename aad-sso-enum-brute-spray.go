@@ -104,7 +104,7 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	res.Body.Close()
 	// print response status and body
 	if res.StatusCode != 200 {
-		getResults(getCode(string(data)), user, password)
+		getResults(getErrorCode(string(data)), user, password)
 	} else {
 		fmt.Fprintln(output, user+":"+password+" -> Existing user")
 	}
@@ -164,7 +164,7 @@ func bruteForcing(users_file string, passwords_file string) {
 	}
 }
 
-func getCode(xmlcode string) string {
+func getErrorCode(xmlcode string) string {
 	// Extract error code from xml response
 	x := xmlStruct{}
 	_ = xml.Unmarshal([]byte(xmlcode), &x)
