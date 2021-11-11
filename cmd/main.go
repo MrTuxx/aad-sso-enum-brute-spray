@@ -16,6 +16,55 @@ import (
 	"time"
 )
 
+func init() {
+	flag.Var(&email, "email", "Example: user@domain.com")
+	flag.Var(&password, "password", "Example: P@ssw0rd!")
+	flag.Var(&emailsFile, "emails-file", "Example: /your/path/emails.txt")
+	flag.Var(&passwordsFile, "passwords-file", "Example: /your/path/passwords.txt")
+}
+
+func main() {
+
+	flag.Parse()
+
+	filename := "output-" + time.Now().Format("20060102150405") + ".txt"
+	fd, err := os.Create(filename)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+	output = io.MultiWriter(os.Stdout, fd)
+
+	if email.set && password.set {
+		wg.Add(1)
+		domain := strings.Split(email.value, "@")[1]
+		go requestAzureActiveDirectory(domain, email.value, password.value)
+	}
+	if emailsFile.set {
+		if _, err := os.Stat(emailsFile.value); os.IsNotExist(err) {
+			println("[!] The file doesn't exist")
+			os.Exit(1)
+		}
+	}
+	if passwordsFile.set {
+		if _, err := os.Stat(passwordsFile.value); os.IsNotExist(err) {
+			println("[!] The file doesn't exist")
+			os.Exit(1)
+		}
+	}
+	if passwordsFile.set && emailsFile.set {
+		bruteForcing(emailsFile.value, passwordsFile.value)
+	}
+	if email.set && passwordsFile.set {
+		domain := strings.Split(email.value, "@")[1]
+		passwordAttack(passwordsFile.value, email.value, domain)
+	}
+	if emailsFile.set && password.set {
+		enumUsers(emailsFile.value, password.value)
+	}
+	wg.Wait()
+}
+
 type stringFlag struct {
 	set   bool
 	value string
@@ -191,51 +240,3 @@ func getErrorCodeMessage(errorCode string) string {
 	return "No error message for ErrorCode: " + errorCode
 }
 
-func init() {
-	flag.Var(&email, "email", "Example: user@domain.com")
-	flag.Var(&password, "password", "Example: P@ssw0rd!")
-	flag.Var(&emailsFile, "emails-file", "Example: /your/path/emails.txt")
-	flag.Var(&passwordsFile, "passwords-file", "Example: /your/path/passwords.txt")
-}
-
-func main() {
-
-	flag.Parse()
-
-	filename := "output-" + time.Now().Format("20060102150405") + ".txt"
-	fd, err := os.Create(filename)
-	if err != nil {
-		log.Print(err)
-		os.Exit(1)
-	}
-	output = io.MultiWriter(os.Stdout, fd)
-
-	if email.set && password.set {
-		wg.Add(1)
-		domain := strings.Split(email.value, "@")[1]
-		go requestAzureActiveDirectory(domain, email.value, password.value)
-	}
-	if emailsFile.set {
-		if _, err := os.Stat(emailsFile.value); os.IsNotExist(err) {
-			println("[!] The file doesn't exist")
-			os.Exit(1)
-		}
-	}
-	if passwordsFile.set {
-		if _, err := os.Stat(passwordsFile.value); os.IsNotExist(err) {
-			println("[!] The file doesn't exist")
-			os.Exit(1)
-		}
-	}
-	if passwordsFile.set && emailsFile.set {
-		bruteForcing(emailsFile.value, passwordsFile.value)
-	}
-	if email.set && passwordsFile.set {
-		domain := strings.Split(email.value, "@")[1]
-		passwordAttack(passwordsFile.value, email.value, domain)
-	}
-	if emailsFile.set && password.set {
-		enumUsers(emailsFile.value, password.value)
-	}
-	wg.Wait()
-}
