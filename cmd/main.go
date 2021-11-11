@@ -1,6 +1,7 @@
 package main
 
 import (
+	"aad-sso-enum-brute-spray/pkg/dto"
 	"bufio"
 	"encoding/xml"
 	"flag"
@@ -70,10 +71,6 @@ func main() {
 		enumUsers(emailsFile.value, password.value)
 	}
 	wg.Wait()
-}
-
-type xmlStruct struct {
-	Dtext string `xml:"Body>Fault>Detail>error>internalerror>text"`
 }
 
 func requestAzureActiveDirectory(domain string, user string, password string) {
@@ -198,9 +195,9 @@ func enumUsers(usersFile string, password string) {
 
 func getErrorCode(xmlcode string) string {
 	// Extract error code from xml response
-	x := xmlStruct{}
-	_ = xml.Unmarshal([]byte(xmlcode), &x)
-	errorCode := strings.Split(x.Dtext, ":")[0]
+	azureErrorResponseDto := dto.AzureErrorResponseDto{}
+	_ = xml.Unmarshal([]byte(xmlcode), &azureErrorResponseDto)
+	errorCode := strings.Split(azureErrorResponseDto.Error, ":")[0]
 	return errorCode
 }
 
