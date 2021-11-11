@@ -18,11 +18,12 @@ $ git clone https://github.com/MrTuxx/aad-sso-enum-brute-spray
 $ cd aad-sso-enum-brute-spray/cmd; go build -o 'aad-sso-enum-brute-spray'
 $ ./aad-sso-enum-brute-spray -h
 ```
+<!---
 - Go module option:
 ```
 $ go get github.com/MrTuxx/aad-sso-enum-brute-spray
 ```
-<!--- - Download a prebuilt binary from releases page. -->
+- Download a prebuilt binary from releases page. -->
 
 ## Usage 🚀
 
