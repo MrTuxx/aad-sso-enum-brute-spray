@@ -22,7 +22,7 @@ $ ./aad-sso-enum-brute-spray -h
 ```
 $ go get github.com/MrTuxx/aad-sso-enum-brute-spray
 ```
-- Download a prebuilt binary from releases page.
+<!--- - Download a prebuilt binary from releases page. -->
 
 ## Usage 🚀
 
