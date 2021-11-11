@@ -145,8 +145,7 @@ func requestAzureActiveDirectory(domain string, user string, password string) {
 	defer wg.Done()
 }
 
-func enumUsers(usersFile string, password string) {
-
+func bruteForcing(usersFile string, passwordsFile string) {
 	users, err := os.Open(usersFile)
 	if err != nil {
 		log.Fatal(err)
@@ -154,10 +153,9 @@ func enumUsers(usersFile string, password string) {
 	defer users.Close()
 	scannerUsers := bufio.NewScanner(users)
 	for scannerUsers.Scan() {
-		wg.Add(1)
 		user := scannerUsers.Text()
 		domain := strings.Split(user, "@")[1]
-		go requestAzureActiveDirectory(domain, user, password)
+		passwordAttack(passwordsFile, user, domain)
 	}
 	if err := scannerUsers.Err(); err != nil {
 		log.Fatal(err)
@@ -165,7 +163,6 @@ func enumUsers(usersFile string, password string) {
 }
 
 func passwordAttack(passwordsFile string, user string, domain string) {
-
 	passwords, err := os.Open(passwordsFile)
 	if err != nil {
 		log.Fatal(err)
@@ -181,7 +178,7 @@ func passwordAttack(passwordsFile string, user string, domain string) {
 	}
 }
 
-func bruteForcing(usersFile string, passwordsFile string) {
+func enumUsers(usersFile string, password string) {
 	users, err := os.Open(usersFile)
 	if err != nil {
 		log.Fatal(err)
@@ -189,9 +186,10 @@ func bruteForcing(usersFile string, passwordsFile string) {
 	defer users.Close()
 	scannerUsers := bufio.NewScanner(users)
 	for scannerUsers.Scan() {
+		wg.Add(1)
 		user := scannerUsers.Text()
 		domain := strings.Split(user, "@")[1]
-		passwordAttack(passwordsFile, user, domain)
+		go requestAzureActiveDirectory(domain, user, password)
 	}
 	if err := scannerUsers.Err(); err != nil {
 		log.Fatal(err)
