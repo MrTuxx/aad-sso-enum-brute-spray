@@ -15,7 +15,7 @@ This repository has been inspired by @treebuilder's proof of concept. The purpos
 - Github repository option:
 ```
 $ git clone https://github.com/MrTuxx/aad-sso-enum-brute-spray
-$ cd aad-sso-enum-brute-spray; go build;
+$ cd aad-sso-enum-brute-spray/cmd; go build -o 'aad-sso-enum-brute-spray'
 $ ./aad-sso-enum-brute-spray -h
 ```
 - Go module option:
