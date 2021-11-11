@@ -16,6 +16,15 @@ import (
 	"time"
 )
 
+var (
+	email         Flag
+	password      Flag
+	emailsFile    Flag
+	passwordsFile Flag
+	output        io.Writer
+	wg            sync.WaitGroup
+)
+
 func init() {
 	flag.Var(&email, "email", "Example: user@domain.com")
 	flag.Var(&password, "password", "Example: P@ssw0rd!")
@@ -24,9 +33,7 @@ func init() {
 }
 
 func main() {
-
 	flag.Parse()
-
 	filename := "output-" + time.Now().Format("20060102150405") + ".txt"
 	fd, err := os.Create(filename)
 	if err != nil {
@@ -65,33 +72,9 @@ func main() {
 	wg.Wait()
 }
 
-type stringFlag struct {
-	set   bool
-	value string
-}
-
 type xmlStruct struct {
 	Dtext string `xml:"Body>Fault>Detail>error>internalerror>text"`
 }
-
-func (sf *stringFlag) Set(x string) error {
-	sf.value = x
-	sf.set = true
-	return nil
-}
-
-func (sf *stringFlag) String() string {
-	return sf.value
-}
-
-var (
-	email         stringFlag
-	password      stringFlag
-	emailsFile    stringFlag
-	passwordsFile stringFlag
-	output        io.Writer
-	wg            sync.WaitGroup
-)
 
 func requestAzureActiveDirectory(domain string, user string, password string) {
 	requestid := uuid.New()
