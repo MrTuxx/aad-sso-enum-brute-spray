@@ -1,5 +1,5 @@
-package main
+package dto
 
 type AzureErrorResponseDto struct {
-	Code string `xml:"Body>Fault>Detail>error>internalerror>text"`
+	Error string `xml:"Body>Fault>Detail>error>internalerror>text"`
 }
