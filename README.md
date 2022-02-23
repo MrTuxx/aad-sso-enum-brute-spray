@@ -43,6 +43,12 @@ User enumeration, password spraying and brute force attacks can be performed.
 
 >NOTE: Microsoft's Smart Lockout feature will start falsely claiming that accounts are locked if you hit the API endpoint too quickly from the same IP address
 
+### Paired attack
+
+`./aad-sso-enum-brute-spray -paired users_passwords.txt`
+
+>NOTE: The file users_passwords.txt contains the list of credentials in username:password format
+
 ## References :books:
 
 - [Secureworks' research](https://www.secureworks.com/research/undetected-azure-active-directory-brute-force-attacks)
